@@ -135,7 +135,7 @@ Còn 2 cờ khác nữa là: “P” - cờ ưu tiên và “F” – báo hiệ
 11.seq number (sequence number): số thứ tự của gói tin của giao thức tầng mạng (và tầng giao vận). Chú ý rằng NS-2 vẫn đánh STT gói tin UDP trong tệp vết để hỗ trợ việc phân tích kết quả mô phỏng, mặc dầu giao thức UDP trong thực tế không đánh số thứ tự gói tin.
 12. pkt id (packet id: chứa số định danh của gói tin. Cần chú ý rằng, các gói tin bị loại(droped) sẽ được một số giao thức (như TCP) phát lại với cùng giá trị seq number, nhưng NS-2 gán giá trị pkt id khác để hỗ trợ việc phân tích được thuận lợi.
 
-// ack là tín hiệu xác nhận dữ liệu đc truyền thành công
+// ack là gói tin báo nhận (Acknowledgement)
 Ví dụ: sự kiện nhận (r) diễn ra ở thời điểm 1.3556s từ node 3 đến node 2 loại gói tin: ack kích thước: 40 byte trường flag fid: 1 nút nguồn: 3 nút đích: 0 port nguồn và đích đều là 0
 + : đẩy gói tin vào hàng đợi
 fid: id của luồng dữ liệu
@@ -154,11 +154,9 @@ Giá trị thông lượng trung bình của 4 kết nối tính được cụ t
 − ftp3: 281.96875(Kbps)
 − ftp2: 277.09375(Kbps)
 Nhận xét:
-− Luồng cbr có thông lượng cao xấp xỉ bằng tốc độ sinh lưu lượng ( đưa vào mạng) được
-chúng ta thiết lập bằng 1.5Mbps.
-− Các luồng lưu lượng ftp0, ftp1 và ftp2 mặc dù đều truyền dữ liệu trong khoảng thời
-gian bằng nhau và bằng 10s, nhưng đạt được thông lượng trung bình khác nhau do
-được thiết lập các giá trị cửa sổ cực đại khác nhau (32, 16 và 64 packet).
+
+- Luồng cbr có thông lượng cao xấp xỉ bằng tốc độ sinh lưu lượng ( đưa vào mạng) được chúng ta thiết lập bằng 1.5Mbps.
+- Các luồng lưu lượng ftp0, ftp1 và ftp2 mặc dù đều truyền dữ liệu trong khoảng thời gian bằng nhau và bằng 10s, nhưng đạt được thông lượng trung bình khác nhau do được thiết lập các giá trị cửa sổ cực đại khác nhau (32, 16 và 64 packet).
 
 `perl avg_throughput_during_sim_time.pl <trace file> <flow id> <required node>`
 Trong đó, các tham số dòng lệnh:
@@ -184,7 +182,7 @@ Tham số (cờ ) random_ dùng để báo cho NS-2 lập lịch gửi các gói
 `$cbr set packet_size_ 1000 ; Default value = 1000 bytes`
 $cbr set rate_ 1.5mb
 windows_ : cửa sổ gửi cực đại; Mbps = Mega bits per second; ms = mili second
-
+// window size: là các bit dùng để điều khiển cờ (flag) ACK, cờ Sequence (bytes)
 // 3tcp: s0 s5, s1 s6, s2 s7
 // 1 udp: s1 s6
 
@@ -204,5 +202,48 @@ perl avg_delay_during_sim_time.pl chapter5_sample1.tr 2 2 7
 perl avg_delay_during_sim_time.pl chapter5_sample1.tr 3 1 6
 
 Nhận xét:
-− Độ trễ trung bình của các gói tin thuộc luồng cbr có giá trị nhỏ nhất, bởi vì khi gửi đi các gói tin, thực thể gửi UDP không cần chờ phản hồi, không cần tự thích ứng với dải thông của đường truyền.
-− Các luồng lưu lượng ftp0, ftp1 và ftp2 mặc dù đều truyền dữ liệu trong khoảng thời gian bằng nhau, qua cùng một số node mạng và qua các đường truyền có dải thông và độ trễ như nhau; tuy nhiên độ trễ trung bình của các gói tin của các luồng khác nhau, do giá trị cực đại của các cửa sổ gửi được thiết lập khác nhau (32, 16 và 64 packet).
+
+- Độ trễ trung bình của các gói tin thuộc luồng cbr có giá trị nhỏ nhất, bởi vì khi gửi đi các gói tin, thực thể gửi UDP không cần chờ phản hồi, không cần tự thích ứng với dải thông của đường truyền.
+- Các luồng lưu lượng ftp0, ftp1 và ftp2 mặc dù đều truyền dữ liệu trong khoảng thời gian bằng nhau, qua cùng một số node mạng và qua các đường truyền có dải thông và độ trễ như nhau; tuy nhiên độ trễ trung bình của các gói tin của các luồng khác nhau, do giá trị cực đại của các cửa sổ gửi được thiết lập khác nhau (32, 16 và 64 packet).
+
+### Phân tích file
+// biến nhận đầu vào
+```
+$infile=$ARGV[0];
+$flow=$ARGV[1];
+$src=$ARGV[2];
+$dst=$ARGV[3];
+```
+
+// Mảng lưu id và thời điểm gửi gói tin
+// Mảng lưu id và thời điểm nhận gói tin
+// khởi tạo các p tử đều là 0
+
+```
+@send = (0..0);
+@recv = (0..0);
+```
+
+// lưu tại id lớn nhất của gói tin để duyệt từ 0 đến max
+`$max_pktid = 0;`
+
+// tính độ trễ từng gói + lại / tổng số gói
+
+```
+$node_ = $x[2] if (($event_ eq "+") || ($event_ eq "s"));
+$node_ = $x[3] if ($event_ eq "r");
+```
+// ghi thời điểm gửi và nhận từng gói tin vào mảng, $num đếm số gói tin
+```
+if ((($event_ eq "+") || ($event_ eq "s")) && ($flow_ == $flow) && ($node_ == $src) && (!$send[$pkt_])) {
+# Kiem tra (!$send[$pkt_]) dam bao luon tinh goi tin duoc gui lan dau,k tinh goi tin gui lai
+$send[$pkt_] = $time_;
+$max_pktid = $pkt_ if ($max_pktid < $pkt_);
+}
+if (($event_ eq "r") && ($flow_ == $flow) && ($node_ == $dst)) {
+$recv[$pkt_] = $time_;
+$num++;
+}
+}
+```
+
