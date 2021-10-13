@@ -104,11 +104,10 @@ $tcp0 set packetSize_ 1009
 `$ns at 0.5 "$ftp0 start"`
 
 ## Tìm hiểu tệp vết để xác định thông số hiệu năng cho hệ thống mạng
-// Quá trình mô phỏng mạng lưu trong tệp viết
-// Phân tích tệp vết vidu2.tr = perl
-
-// nắm đc ý nghĩa các trg trong tệp vết
-
+- // Quá trình mô phỏng mạng lưu trong tệp viết
+- // nắm đc ý nghĩa các trg trong tệp vết
+- // 3tcp: s0 s5, s1 s6, s2 s7
+- // 1 udp: s1 s6
 - Cho mạng có dây
 ![](./coday.png)
 
@@ -160,31 +159,25 @@ Nhận xét:
 
 `perl avg_throughput_during_sim_time.pl <trace file> <flow id> <required node>`
 Trong đó, các tham số dòng lệnh:
-− `<trace file>` file đầu vào dùng để phân tích (thí dụ: chapter5_sample1.tr)
-− `<flow id>` id của kết nối cần tính thông lượng trung bình
-(thí dụ với các luồng tcp0:1, tcp1:2, tcp2:3, tcp3:4)
-− `<required node>` nốt nhận lưu lượng cần tính thông lượng trung bình.
 
-(thí dụ: node 3 và 4 có thể nhận các lưu lượng ftp0, ftp1, ftp2,
-cbr; node 5 chỉ nhận lưu lượng ftp0, node 6 có thể nhận lưu
-lượng ftp1 và cbr, node 7 chỉ nhận lưu lượng ftp2).
-// udp/null: là cặp thực thể gửi/nhận của giao thức udp;
-// tcp0/sink0, tcp1/sink1, tcp2/sink2: là các cặp thực thể gửi/nhận của giao thức tcp;
-// ftp0, ... là các nguồn sinh lưu lượng của các ứng dụng truyền file – FTP;
-// cbr: là nguồn sinh lưu lượng với tốc độ không đổi (Constant Bit Rate);
+- `<trace file>` file đầu vào dùng để phân tích (thí dụ: chapter5_sample1.tr)
+- `<flow id>` id của kết nối cần tính thông lượng trung bình (thí dụ với các luồng tcp0:1, tcp1:2, tcp2:3, tcp3:4)
+- `<required node>` nốt nhận lưu lượng cần tính thông lượng trung bình.(thí dụ: node 3 và 4 có thể nhận các lưu lượng ftp0, ftp1, ftp2, cbr; node 5 chỉ nhận lưu lượng ftp0, node 6 có thể nhận lưu lượng ftp1 và cbr, node 7 chỉ nhận lưu lượng ftp2).
+- // udp/null: là cặp thực thể gửi/nhận của giao thức udp;
+- // tcp0/sink0, tcp1/sink1, tcp2/sink2: là các cặp thực thể gửi/nhận của giao thức tcp;
+- // ftp0, ... là các nguồn sinh lưu lượng của các ứng dụng truyền file – FTP;
+- // cbr: là nguồn sinh lưu lượng với tốc độ không đổi (Constant Bit Rate);
 
-// set tcp0 [$ns create-connection TCP/Reno $s0 TCPSink $s5 0] ;# fid_ = 0
-thiết lập flow id (fid_) bằng 0 cho luồng lưu lượng tcp từ node s0 đến node s5.
+// set tcp0 [$ns create-connection TCP/Reno $s0 TCPSink $s5 0] ;# fid_ = 0 thiết lập flow id (fid_) bằng 0 cho luồng lưu lượng tcp từ node s0 đến node s5.
 
 $cbr set random_ false
-Tham số (cờ ) random_ dùng để báo cho NS-2 lập lịch gửi các gói tin cbr ở các thời điểm ngẫu nhiên. Trong thí dụ này chúng ta thiết lập cho random_ bằng false, nghĩa là các gói tin sẽ được gửi đi đều đặn, cách nhau những khoảng thời gian xác định, phụ thuộc vào kích thước gói tin và rate_.
+- Tham số (cờ ) random_ dùng để báo cho NS-2 lập lịch gửi các gói tin cbr ở các thời điểm ngẫu nhiên.
+- Trong thí dụ này chúng ta thiết lập cho random_ bằng false, nghĩa là các gói tin sẽ được gửi đi đều đặn, cách nhau những khoảng thời gian xác định, phụ thuộc vào kích thước gói tin và rate_.
 
 `$cbr set packet_size_ 1000 ; Default value = 1000 bytes`
-$cbr set rate_ 1.5mb
-windows_ : cửa sổ gửi cực đại; Mbps = Mega bits per second; ms = mili second
-// window size: là các bit dùng để điều khiển cờ (flag) ACK, cờ Sequence (bytes)
-// 3tcp: s0 s5, s1 s6, s2 s7
-// 1 udp: s1 s6
+- $cbr set rate_ 1.5mb
+- windows_ : cửa sổ gửi cực đại; Mbps = Mega bits per second; ms = mili second
+- // window size: là các bit dùng để điều khiển cờ (flag) ACK, cờ Sequence (bytes)
 
 // Tính thông lượng của từng kết nối
 perl avg_throughput_during_sim_time.pl chapter5_sample1.tr 0 5
